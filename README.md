@@ -43,6 +43,19 @@ You can combine phones and desktops in the same composition. Click the `×` besi
 
 Images are processed in the browser and are not uploaded to a server.
 
+## Publish on GitHub Pages
+
+The repository includes a GitHub Actions workflow in
+[`.github/workflows/pages.yml`](./.github/workflows/pages.yml).
+
+For the first deployment, open the repository on GitHub and go to
+**Settings → Pages**. Under **Build and deployment**, choose **GitHub Actions**.
+Then open the **Actions** tab and re-run the latest **Deploy to GitHub Pages**
+workflow. Later pushes to the `main` branch deploy automatically.
+
+The published address is:
+<https://elodiepe.github.io/mockup-creator/>
+
 ## Project files
 
 - `index.html` — app structure and controls
