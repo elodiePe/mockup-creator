@@ -1,0 +1,107 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 650" width="100%" height="100%">
+  <defs>
+    <!-- Ombre sous la base -->
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="150%">
+      <feDropShadow dx="0" dy="12" stdDeviation="10" flood-color="#000000" flood-opacity="0.35" />
+    </filter>
+
+    <!-- DÃ©gradÃ© mÃ©tallique pour le corps principal de la base -->
+    <linearGradient id="metalBase" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#e0e0e0" />
+      <stop offset="30%" stop-color="#cdcdcd" />
+      <stop offset="70%" stop-color="#b8b8b8" />
+      <stop offset="100%" stop-color="#a0a0a0" />
+    </linearGradient>
+
+    <!-- DÃ©gradÃ© mÃ©tallique horizontal pour la tranche et les bords -->
+    <linearGradient id="metalHorizontal" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#999999" />
+      <stop offset="3%" stop-color="#e6e6e6" />
+      <stop offset="10%" stop-color="#d0d0d0" />
+      <stop offset="90%" stop-color="#d0d0d0" />
+      <stop offset="97%" stop-color="#e6e6e6" />
+      <stop offset="100%" stop-color="#999999" />
+    </linearGradient>
+
+    <!-- DÃ©gradÃ© pour l'encoche d'ouverture centrale -->
+    <linearGradient id="notchGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#888888" />
+      <stop offset="60%" stop-color="#c0c0c0" />
+      <stop offset="100%" stop-color="#e0e0e0" />
+    </linearGradient>
+
+    <!-- DÃ©gradÃ© pour le reflet discret sur le cadre noir de l'Ã©cran -->
+    <linearGradient id="bezelGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2a2a2a" />
+      <stop offset="50%" stop-color="#141414" />
+      <stop offset="100%" stop-color="#050505" />
+    </linearGradient>
+  </defs>
+
+  <style>
+    .screen-bg { fill: none; }
+    .bezel { fill: none; }
+    .camera { fill: #080808; }
+    .camera-lens { fill: #1a2b4c; }
+    .rubber-gasket { fill: #0a0a0a; }
+  </style>
+
+  <!-- Ombre portÃ©e au sol -->
+  <ellipse cx="500" cy="570" rx="430" ry="12" fill="#000000" opacity="0.25" filter="blur(6px)" />
+  <ellipse cx="500" cy="568" rx="410" ry="6" fill="#000000" opacity="0.35" filter="blur(3px)" />
+
+  <!-- ==================== Ã‰CRAN (PARTIE SUPÃ‰RIEURE) ==================== -->
+  <g id="display-assembly">
+    <!-- Contour extÃ©rieur noir / Joint d'Ã©tanchÃ©itÃ© -->
+    <rect x="148" y="88" width="704" height="464" rx="20" ry="20" class="bezel" stroke="url(#bezelGlow)" stroke-width="14" />
+
+    <!-- Ã‰cran blanc / Zone d'affichage active -->
+
+    <!-- CamÃ©ra Web en haut au centre -->
+    <circle cx="500" cy="95" r="3" class="camera" />
+    <circle cx="500" cy="95" r="1" class="camera-lens" />
+  </g>
+
+  <!-- ==================== BASE (PARTIE INFÃ‰RIEURE) ==================== -->
+  <g id="base-assembly">
+    <!-- CharniÃ¨re noire visible sous l'Ã©cran -->
+    <rect x="150" y="546" width="700" height="6" fill="#111111" rx="1" />
+
+    <!-- Corps supÃ©rieur de la base mÃ©tallique -->
+    <path d="M 60,552 
+             L 940,552 
+             C 943,552 945,554 945,557
+             L 938,565 
+             C 930,572 900,573 850,573 
+             L 150,573 
+             C 100,573 70,572 62,565 
+             L 55,557 
+             C 55,554 57,552 60,552 Z" fill="url(#metalHorizontal)" />
+
+    <!-- Surface principale supÃ©rieure de la base (plateau) -->
+    <path d="M 60,552 
+             L 940,552 
+             C 943,552 945,553.5 945,555.5
+             L 942,560
+             L 58,560 
+             L 55,555.5 
+             C 55,553.5 57,552 60,552 Z" fill="url(#metalBase)" />
+
+    <!-- Tranche avant biseautÃ©e et brillante -->
+    <path d="M 58,560 
+             L 942,560 
+             C 940,566 900,571.5 840,571.5 
+             L 160,571.5 
+             C 100,571.5 60,566 58,560 Z" fill="#c2c2c2" />
+
+    <!-- Encoche centrale pour l'ouverture du capot -->
+    <path d="M 430,552 
+             L 570,552 
+             C 568,563 562,565 550,565 
+             L 450,565 
+             C 438,565 432,563 430,552 Z" fill="url(#notchGradient)" />
+          
+    <!-- Ombre de l'encoche pour donner de la profondeur -->
+    <path d="M 430,552 L 570,552 C 565,554 555,555 550,555 L 450,555 C 445,555 435,554 430,552 Z" fill="#777777" opacity="0.6" />
+  </g>
+</svg>
