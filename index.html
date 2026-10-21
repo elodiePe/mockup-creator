@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Framecraft — Mockup creator</title>
+    <title>Framecraft — Mockup lab</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
@@ -11,44 +11,52 @@
       <header class="topbar">
         <a class="brand" href="#" aria-label="Framecraft home">
           <span class="brand-mark">F</span>
-          <span>framecraft</span>
+          <span>framecraft<em>.lab</em></span>
         </a>
         <div class="topbar-actions">
-          <span class="saved-status"><span class="status-dot"></span> Private · runs in your browser</span>
+          <span class="saved-status"><span class="status-dot"></span> 100% private · runs in your browser</span>
+          <button class="ghost-button" id="surpriseButton" title="Randomize the vibe">🎲 Surprise me</button>
           <button class="ghost-button" id="resetButton">Reset</button>
-          <button class="download-button" id="downloadButton">
-            <span>↓</span> Export PNG
-          </button>
+          <button class="download-button" id="downloadButton"><span>🚀</span> Launch PNG</button>
         </div>
       </header>
 
       <main class="workspace">
         <aside class="sidebar">
-          <div class="eyebrow">Create a mockup</div>
-          <h1>Make your screen<br /><em>stand out.</em></h1>
-          <p class="intro">Upload a screenshot, choose a device, and get a polished mockup in seconds.</p>
+          <div class="eyebrow">// mockup lab v2</div>
+          <h1>Beam your pixels <br /><em>into orbit.</em></h1>
+          <p class="intro">Drop a screenshot, pick a gadget, bend reality a little. Fresh mockups in seconds, zero spaceships required.</p>
 
           <section class="control-section upload-section">
-            <div class="section-heading"><span>01</span><strong>Screens & devices</strong></div>
+            <div class="section-heading"><span>01</span><strong>Gadgets &amp; screens</strong></div>
             <div class="device-list" id="deviceList"></div>
             <div class="add-device-row">
               <button class="add-device-button" id="addPhoneButton">＋ Phone</button>
-              <button class="add-device-button" id="addDesktopButton">＋ Desktop</button>
+              <button class="add-device-button" id="addDesktopButton">＋ Laptop</button>
+              <button class="add-device-button" id="addMonitorButton">＋ Big screen</button>
             </div>
             <label class="dropzone" id="dropzone" for="fileInput">
               <input id="fileInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
               <span class="upload-icon">↑</span>
-              <span class="drop-title">Add screenshot to selected device</span>
-              <span class="drop-subtitle">or <u>browse your files</u></span>
+              <span class="drop-title">Feed the selected gadget</span>
+              <span class="drop-subtitle">drop a file or <u>browse your stash</u></span>
               <span class="file-name" id="fileName">PNG, JPG, WebP or GIF · max 20 MB</span>
             </label>
           </section>
 
           <section class="control-section">
-            <div class="section-heading"><span>02</span><strong>Selected device</strong></div>
+            <div class="section-heading"><span>02</span><strong>Gadget type</strong></div>
             <div class="segmented-control" role="group" aria-label="Device frame">
               <button class="segment active" data-device="phone">Phone</button>
-              <button class="segment" data-device="desktop">Desktop</button>
+              <button class="segment" data-device="desktop">Laptop</button>
+              <button class="segment" data-device="monitor">Big screen</button>
+            </div>
+            <div class="orientation-row" id="orientationRow">
+              <div class="mini-label">Orientation</div>
+              <div class="segmented-control" role="group" aria-label="Orientation">
+                <button class="segment active" data-orient="portrait">▯ Portrait</button>
+                <button class="segment" data-orient="landscape">▭ Landscape</button>
+              </div>
             </div>
           </section>
 
@@ -56,24 +64,17 @@
             <div class="section-heading"><span>03</span><strong>Background</strong></div>
             <div class="background-options">
               <button class="background-option active" data-background="gradient">
-                <span class="swatch gradient-swatch"></span>
-                <span>Warm gradient</span>
-                <span class="option-check">✓</span>
+                <span class="swatch gradient-swatch"></span><span>Gradient</span><span class="option-check">✓</span>
               </button>
+              <div class="gradient-presets" id="gradientPresets"></div>
               <button class="background-option" data-background="plain">
-                <span class="swatch plain-swatch"></span>
-                <span>Solid color</span>
-                <span class="option-check">✓</span>
+                <span class="swatch plain-swatch"></span><span>Solid color</span><span class="option-check">✓</span>
               </button>
               <button class="background-option" data-background="transparent">
-                <span class="swatch transparent-swatch"></span>
-                <span>Transparent</span>
-                <span class="option-check">✓</span>
+                <span class="swatch transparent-swatch"></span><span>Transparent</span><span class="option-check">✓</span>
               </button>
               <button class="background-option" data-background="image">
-                <span class="swatch image-swatch">▧</span>
-                <span>Personal image</span>
-                <span class="option-check">✓</span>
+                <span class="swatch image-swatch">▧</span><span>Personal image</span><span class="option-check">✓</span>
               </button>
             </div>
             <label class="background-upload" id="backgroundUpload" for="backgroundInput">
@@ -91,13 +92,21 @@
           </section>
 
           <section class="control-section tuning-section">
-            <div class="section-heading"><span>04</span><strong>Fine tune selected device</strong></div>
+            <div class="section-heading"><span>04</span><strong>Bend reality</strong></div>
+            <label class="range-row">
+              <span>Depth <output id="depthValue">0</output></span>
+              <input id="depthRange" type="range" min="0" max="100" value="0" />
+            </label>
+            <label class="range-row">
+              <span>3D tilt <output id="tiltValue">0°</output></span>
+              <input id="tiltRange" type="range" min="-45" max="45" value="0" />
+            </label>
             <label class="range-row">
               <span>Scale <output id="scaleValue">100%</output></span>
               <input id="scaleRange" type="range" min="40" max="150" value="100" />
             </label>
             <label class="range-row">
-              <span>Rotation <output id="rotationValue">0°</output></span>
+              <span>Spin <output id="rotationValue">0°</output></span>
               <input id="rotationRange" type="range" min="-30" max="30" value="0" />
             </label>
             <label class="range-row">
@@ -120,14 +129,14 @@
             </div>
           </section>
 
-          <p class="privacy-note"><span>✦</span> Your images never leave your browser.</p>
+          <p class="privacy-note"><span>✦</span> Your images never leave your browser. Not even for snacks.</p>
         </aside>
 
         <section class="preview-area">
           <div class="preview-toolbar">
             <div>
-              <span class="preview-label">Live preview</span>
-              <span class="preview-size" id="previewSize">1200 × 1500 px</span>
+              <span class="preview-label">● Live preview</span>
+              <span class="preview-size" id="previewSize">1 device · 1200 × 1500 px</span>
             </div>
             <button class="icon-button" id="fullscreenButton" title="Open preview fullscreen" aria-label="Open preview fullscreen">⤢</button>
           </div>
@@ -135,7 +144,7 @@
             <canvas class="preview-canvas" id="previewCanvas" aria-label="Mockup preview"></canvas>
           </div>
           <div class="preview-footer">
-            <span><span class="kbd">Tip</span> Drag a device to move it · drop a screenshot onto it</span>
+            <span><span class="kbd">Tip</span> Drag a gadget to move it · drop a screenshot onto it</span>
             <span id="imageDimensions"></span>
           </div>
         </section>

@@ -14,13 +14,33 @@ const DEFAULT_COLOR = '#f2a187';
 // Natural (unscaled) device sizes, in layout units.
 const PHONE = { w: 272, h: 560, radius: 46 };
 const LAPTOP = { w: 1000, h: 561 };
+const MONITOR = { w: 1000, h: 796 };
+const NATURAL = { phone: PHONE, desktop: LAPTOP, monitor: MONITOR };
+const EDGE = { phone: '#2a2c30', desktop: '#a3a6ab', monitor: '#9da0a5' };
+const LABELS = { phone: 'Phone', desktop: 'Laptop', monitor: 'Big screen' };
+const GRADIENTS = [
+  { name: 'Sunset', stops: ['#ffe8dc', '#f49a7b'] },
+  { name: 'Aurora', stops: ['#a7ffeb', '#5b8def', '#9b5cff'] },
+  { name: 'Cyber', stops: ['#12062b', '#5b1bb5', '#ff3cac'] },
+  { name: 'Bubblegum', stops: ['#ffd1f0', '#c3a6ff', '#8fe3ff'] },
+  { name: 'Lime fizz', stops: ['#f6ffb0', '#6df0a5', '#0fb5ae'] },
+  { name: 'Midnight', stops: ['#0b1020', '#1d2b64', '#3a6ea5'] }
+];
 
 const newDevice = (id, type) => ({
-  id, type, scale: 100, rotation: type === 'phone' && id === 1 ? -4 : 0, x: 0, y: 0, image: null, fileName: ''
+  id, type, scale: 100, rotation: type === 'phone' && id === 1 ? -4 : 0, x: 0, y: 0,
+  depth: 0, tilt: 0, landscape: false, image: null, fileName: ''
 });
+
+// Natural size of a device in layout units, honouring orientation.
+function dimsOf(device) {
+  const n = NATURAL[device.type];
+  return device.landscape && device.type === 'phone' ? { w: n.h, h: n.w } : { w: n.w, h: n.h };
+}
 
 const state = {
   background: 'gradient',
+  gradient: 0,
   color: DEFAULT_COLOR,
   format: 'portrait',
   backgroundImage: null,
@@ -115,7 +135,7 @@ function drawPhone(c, device, shadow, preview) {
   const { w, h, radius } = PHONE;
 
   c.save();
-  c.shadowColor = 'rgba(20, 25, 30, .38)';
+  c.shadowColor = shadow.on ? 'rgba(20, 25, 30, .38)' : 'rgba(0,0,0,0)';
   c.shadowBlur = shadow.blur;
   c.shadowOffsetY = shadow.offset;
   c.fillStyle = '#26282c';
@@ -181,7 +201,7 @@ function drawLaptop(c, device, shadow, preview) {
 
   // One shadow for the whole silhouette
   c.save();
-  c.shadowColor = 'rgba(20, 25, 30, .4)';
+  c.shadowColor = shadow.on ? 'rgba(20, 25, 30, .4)' : 'rgba(0,0,0,0)';
   c.shadowBlur = shadow.blur;
   c.shadowOffsetY = shadow.offset;
   c.fillStyle = '#b9bcc0';
@@ -257,16 +277,99 @@ function drawLaptop(c, device, shadow, preview) {
   c.fill();
 }
 
+function monitorSilhouette(c) {
+  pathRoundRect(c, 0, 0, 1000, 640, [20, 20, 14, 14]);
+  c.fill();
+  c.beginPath();
+  c.moveTo(440, 630); c.lineTo(560, 630); c.lineTo(580, 785); c.lineTo(420, 785);
+  c.closePath();
+  c.fill();
+  pathRoundRect(c, 330, 776, 340, 20, [6, 6, 10, 10]);
+  c.fill();
+}
+
+function drawMonitor(c, device, shadow, preview) {
+  const panel = { w: 1000, h: 640 };
+  c.save();
+  c.shadowColor = shadow.on ? 'rgba(20, 25, 30, .4)' : 'rgba(0,0,0,0)';
+  c.shadowBlur = shadow.blur;
+  c.shadowOffsetY = shadow.offset;
+  c.fillStyle = '#b9bcc0';
+  monitorSilhouette(c);
+  c.restore();
+
+  // Stand
+  const neck = c.createLinearGradient(420, 0, 580, 0);
+  neck.addColorStop(0, '#9a9da2');
+  neck.addColorStop(.4, '#e6e8ea');
+  neck.addColorStop(1, '#8d9095');
+  c.fillStyle = neck;
+  c.beginPath();
+  c.moveTo(440, 630); c.lineTo(560, 630); c.lineTo(580, 785); c.lineTo(420, 785);
+  c.closePath();
+  c.fill();
+  const foot = c.createLinearGradient(0, 776, 0, 796);
+  foot.addColorStop(0, '#eceef0');
+  foot.addColorStop(1, '#a3a6ab');
+  c.fillStyle = foot;
+  pathRoundRect(c, 330, 776, 340, 20, [6, 6, 10, 10]);
+  c.fill();
+
+  // Panel
+  const alu = c.createLinearGradient(0, 0, 0, panel.h);
+  alu.addColorStop(0, '#eceef0');
+  alu.addColorStop(1, '#c3c6ca');
+  c.fillStyle = alu;
+  pathRoundRect(c, 0, 0, panel.w, panel.h, [20, 20, 14, 14]);
+  c.fill();
+  c.strokeStyle = 'rgba(255,255,255,.7)';
+  c.lineWidth = 1.5;
+  pathRoundRect(c, .75, .75, panel.w - 1.5, panel.h - 1.5, [19, 19, 13, 13]);
+  c.stroke();
+  c.fillStyle = '#050506';
+  pathRoundRect(c, 12, 12, 976, 560, 10);
+  c.fill();
+  const sx = 24;
+  const sy = 24;
+  const sw = 952;
+  const sh = 536;
+  c.save();
+  pathRoundRect(c, sx, sy, sw, sh, 4);
+  c.clip();
+  if (device.image) drawCover(c, device.image, sx, sy, sw, sh);
+  else drawPlaceholder(c, sx, sy, sw, sh, true, preview);
+  drawGlare(c, sx, sy, sw, sh);
+  c.restore();
+  c.fillStyle = 'rgba(80,84,90,.35)';
+  c.beginPath();
+  c.arc(500, 606, 8, 0, Math.PI * 2);
+  c.fill();
+}
+
+// Fills the outline of a device with the current fillStyle (used for the 3D edge).
+function fillSilhouette(c, type) {
+  if (type === 'phone') {
+    phoneSilhouette(c);
+    c.fill();
+  } else if (type === 'desktop') {
+    pathRoundRect(c, 80, 0, 840, 535, [26, 26, 0, 0]);
+    c.fill();
+    pathRoundRect(c, 46, 535, 908, 26, [3, 3, 26, 26]);
+    c.fill();
+  } else monitorSilhouette(c);
+}
+
 /* ---------- Layout ---------- */
 
-function naturalSize(device, hasLaptop) {
-  if (device.type === 'desktop') return { w: LAPTOP.w, h: LAPTOP.h };
-  const f = hasLaptop ? .85 : 1;
-  return { w: PHONE.w * f, h: PHONE.h * f, f };
+function naturalSize(device, hasBig) {
+  const n = dimsOf(device);
+  if (device.type !== 'phone') return n;
+  const f = hasBig ? .85 : 1;
+  return { w: n.w * f, h: n.h * f, f };
 }
 
 function computeLayout(width, height) {
-  const hasLaptop = state.devices.some((device) => device.type === 'desktop');
+  const hasLaptop = state.devices.some((device) => device.type !== 'phone');
   const gap = 50;
   const items = state.devices.map((device) => ({ device, ...naturalSize(device, hasLaptop) }));
   const totalW = items.reduce((sum, item) => sum + item.w, 0) + gap * (items.length - 1);
@@ -280,7 +383,7 @@ function computeLayout(width, height) {
     cursor += (item.w + gap) * fit;
     const cy = bottom - item.h * fit / 2;
     const scale = base * item.device.scale / 100;
-    const natural = item.device.type === 'desktop' ? LAPTOP : PHONE;
+    const natural = dimsOf(item.device);
     return {
       device: item.device,
       cx: cx + item.device.x / 100 * width,
@@ -310,9 +413,9 @@ function paintBackground(c, width, height) {
     c.fillRect(0, 0, width, height);
     return;
   }
+  const { stops } = GRADIENTS[state.gradient];
   const gradient = c.createLinearGradient(0, 0, width, height);
-  gradient.addColorStop(0, '#ffe8dc');
-  gradient.addColorStop(1, '#f49a7b');
+  stops.forEach((color, i) => gradient.addColorStop(i / (stops.length - 1), color));
   c.fillStyle = gradient;
   c.fillRect(0, 0, width, height);
   const glow = c.createRadialGradient(width / 2, height * .45, 0, width / 2, height * .45, Math.max(width, height) * .6);
@@ -331,21 +434,47 @@ function drawScene(c, width, height, k, preview) {
   paintBackground(c, width, height);
   placements = computeLayout(width, height);
   drawOrder().forEach((p) => {
+    const d = p.device;
+    const yaw = d.tilt * Math.PI / 180;
+    const thick = d.depth * .6;
     c.save();
     c.translate(p.cx, p.cy);
     c.rotate(p.rotation);
+    // Pseudo-3D yaw: squash horizontally and skew vertically, like a card turning away.
+    c.transform(Math.cos(yaw), -Math.sin(yaw) * .12, 0, 1, 0, 0);
     c.scale(p.scale, p.scale);
-    c.translate(-p.w / 2, -p.h / 2);
-    // shadowBlur is not affected by the transform, so convert to device pixels.
-    const shadow = { blur: 46 * p.scale * k, offset: 26 * p.scale * k };
-    if (p.device.type === 'desktop') drawLaptop(c, p.device, shadow, preview);
-    else drawPhone(c, p.device, shadow, preview);
-    if (preview && state.devices.length > 1 && p.device.id === state.selectedId) {
+    if (preview && state.devices.length > 1 && d.id === state.selectedId) {
+      c.save();
       c.setLineDash([10, 8]);
       c.lineWidth = 2 / p.scale;
-      c.strokeStyle = 'rgba(240, 93, 61, .9)';
-      c.strokeRect(-14, -14, p.w + 28, p.h + 28);
+      c.strokeStyle = 'rgba(0, 240, 200, .95)';
+      c.strokeRect(-p.w / 2 - 14, -p.h / 2 - 14, p.w + 28, p.h + 28);
+      c.restore();
     }
+    if (d.landscape && d.type === 'phone') c.rotate(-Math.PI / 2);
+    const n = NATURAL[d.type];
+    c.translate(-n.w / 2, -n.h / 2);
+    // shadowBlur is not affected by the transform, so convert to device pixels.
+    const shadow = { blur: (46 + d.depth * .5) * p.scale * k, offset: (26 + d.depth * .4) * p.scale * k, on: true };
+    if (thick > 0) {
+      const steps = Math.ceil(thick / 1.5);
+      c.fillStyle = EDGE[d.type];
+      for (let i = steps; i >= 1; i--) {
+        c.save();
+        c.translate(Math.sin(yaw) * thick * i / steps, thick * .25 * i / steps);
+        if (i === steps) {
+          c.shadowColor = 'rgba(20, 25, 30, .4)';
+          c.shadowBlur = shadow.blur;
+          c.shadowOffsetY = shadow.offset;
+        }
+        fillSilhouette(c, d.type);
+        c.restore();
+      }
+      shadow.on = false;
+    }
+    if (d.type === 'desktop') drawLaptop(c, d, shadow, preview);
+    else if (d.type === 'monitor') drawMonitor(c, d, shadow, preview);
+    else drawPhone(c, d, shadow, preview);
     c.restore();
   });
 }
@@ -400,11 +529,11 @@ function renderDeviceList() {
     card.className = `device-card ${device.id === state.selectedId ? 'active' : ''}`;
     const icon = document.createElement('span');
     icon.className = 'device-card-icon';
-    icon.textContent = device.type === 'phone' ? '▯' : '▱';
+    icon.textContent = { phone: '📱', desktop: '💻', monitor: '🖥️' }[device.type];
     const copy = document.createElement('span');
     copy.className = 'device-card-copy';
     const title = document.createElement('strong');
-    title.textContent = `${device.type === 'phone' ? 'Phone' : 'Desktop'} ${index + 1}`;
+    title.textContent = `${LABELS[device.type]} ${index + 1}`;
     const sub = document.createElement('small');
     sub.textContent = device.image ? device.fileName : 'No screenshot yet';
     copy.append(title, sub);
@@ -432,6 +561,14 @@ function syncControls() {
   $('#rotationRange').value = device.rotation;
   $('#positionXRange').value = x;
   $('#positionYRange').value = y;
+  $('#depthRange').value = device.depth;
+  $('#tiltRange').value = device.tilt;
+  $('#depthValue').textContent = `${device.depth}`;
+  $('#tiltValue').textContent = `${device.tilt}°`;
+  $('#orientationRow').style.display = device.type === 'phone' ? 'block' : 'none';
+  document.querySelectorAll('[data-orient]').forEach((item) => item.classList.toggle('active', (item.dataset.orient === 'landscape') === device.landscape));
+  document.querySelectorAll('.gradient-chip').forEach((chip, i) => chip.classList.toggle('active', i === state.gradient));
+  $('#gradientPresets').style.display = state.background === 'gradient' ? 'flex' : 'none';
   $('#scaleValue').textContent = `${device.scale}%`;
   $('#rotationValue').textContent = `${device.rotation}°`;
   $('#positionXValue').textContent = `${x}%`;
@@ -459,7 +596,7 @@ function addDevice(type) {
   state.devices.push(device);
   state.selectedId = device.id;
   render();
-  showToast(`${type === 'phone' ? 'Phone' : 'Desktop'} added. Upload its screenshot.`);
+  showToast(`${LABELS[type]} beamed in. Feed it a screenshot!`);
 }
 
 async function loadFile(file, device = selectedDevice()) {
@@ -473,7 +610,7 @@ async function loadFile(file, device = selectedDevice()) {
   device.fileName = file.name;
   state.selectedId = device.id;
   render();
-  showToast('Screenshot added to the device.');
+  showToast('Pixels received. Looking sharp!');
 }
 
 fileInput.addEventListener('change', (event) => { loadFile(event.target.files[0]); event.target.value = ''; });
@@ -482,6 +619,32 @@ fileInput.addEventListener('change', (event) => { loadFile(event.target.files[0]
 dropzone.addEventListener('drop', (event) => loadFile(event.dataTransfer.files[0]));
 $('#addPhoneButton').addEventListener('click', () => addDevice('phone'));
 $('#addDesktopButton').addEventListener('click', () => addDevice('desktop'));
+$('#addMonitorButton').addEventListener('click', () => addDevice('monitor'));
+document.querySelectorAll('[data-orient]').forEach((button) => button.addEventListener('click', () => {
+  selectedDevice().landscape = button.dataset.orient === 'landscape';
+  redraw();
+}));
+GRADIENTS.forEach((g, i) => {
+  const chip = document.createElement('button');
+  chip.type = 'button';
+  chip.className = 'gradient-chip';
+  chip.title = g.name;
+  chip.style.background = `linear-gradient(135deg, ${g.stops.join(', ')})`;
+  chip.addEventListener('click', () => { state.gradient = i; redraw(); });
+  $('#gradientPresets').append(chip);
+});
+$('#surpriseButton').addEventListener('click', () => {
+  state.background = 'gradient';
+  state.gradient = Math.floor(Math.random() * GRADIENTS.length);
+  document.querySelectorAll('.background-option').forEach((item) => item.classList.toggle('active', item.dataset.background === 'gradient'));
+  state.devices.forEach((device) => {
+    device.rotation = Math.round(Math.random() * 16 - 8);
+    device.tilt = Math.round(Math.random() * 50 - 25);
+    device.depth = Math.round(20 + Math.random() * 40);
+  });
+  render();
+  showToast(['Boom! Fresh vibes.', 'Gravity is optional.', 'Chaos, but make it pretty.', 'Plot twist!'][Math.floor(Math.random() * 4)]);
+});
 
 document.querySelectorAll('.segment').forEach((button) => button.addEventListener('click', () => {
   selectedDevice().type = button.dataset.device;
@@ -519,7 +682,7 @@ backgroundInput.addEventListener('change', async (event) => {
   showToast('Personal background added.');
 });
 
-[['#scaleRange', 'scale'], ['#rotationRange', 'rotation'], ['#positionXRange', 'x'], ['#positionYRange', 'y']].forEach(([selector, key]) => {
+[['#depthRange', 'depth'], ['#tiltRange', 'tilt'], ['#scaleRange', 'scale'], ['#rotationRange', 'rotation'], ['#positionXRange', 'x'], ['#positionYRange', 'y']].forEach(([selector, key]) => {
   $(selector).addEventListener('input', (event) => { selectedDevice()[key] = Number(event.target.value); redraw(); });
 });
 document.querySelectorAll('.format-option').forEach((button) => button.addEventListener('click', () => {
@@ -531,7 +694,7 @@ document.querySelectorAll('.format-option').forEach((button) => button.addEventL
 
 $('#resetButton').addEventListener('click', () => {
   Object.assign(state, {
-    background: 'gradient', color: DEFAULT_COLOR, format: 'portrait', backgroundImage: null,
+    background: 'gradient', gradient: 0, color: DEFAULT_COLOR, format: 'portrait', backgroundImage: null,
     selectedId: 1, nextId: 2, devices: [newDevice(1, 'phone')]
   });
   $('#backgroundFileName').textContent = 'No image selected';
@@ -540,7 +703,7 @@ $('#resetButton').addEventListener('click', () => {
   document.querySelectorAll('.background-option').forEach((item) => item.classList.toggle('active', item.dataset.background === 'gradient'));
   document.querySelectorAll('.format-option').forEach((item) => item.classList.toggle('active', item.dataset.format === 'portrait'));
   render();
-  showToast('Mockup reset.');
+  showToast('Back to a clean slate.');
 });
 
 $('#fullscreenButton').addEventListener('click', () => {
@@ -571,7 +734,8 @@ function hitTest(point) {
     const dy = point.y - p.cy;
     const cos = Math.cos(-p.rotation);
     const sin = Math.sin(-p.rotation);
-    const lx = (dx * cos - dy * sin) / p.scale;
+    const squash = Math.max(.3, Math.cos(p.device.tilt * Math.PI / 180));
+    const lx = (dx * cos - dy * sin) / p.scale / squash;
     const ly = (dx * sin + dy * cos) / p.scale;
     if (Math.abs(lx) <= p.w / 2 && Math.abs(ly) <= p.h / 2) return p.device;
   }
@@ -628,7 +792,7 @@ async function exportPng() {
     link.click();
     link.remove();
     window.setTimeout(() => URL.revokeObjectURL(url), 2000);
-    showToast(`Exported ${out.width} × ${out.height} px.`);
+    showToast(`Launched! ${out.width} × ${out.height} px.`);
   }, 'image/png');
 }
 $('#downloadButton').addEventListener('click', exportPng);
