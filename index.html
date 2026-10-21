@@ -14,7 +14,7 @@
           <span>framecraft</span>
         </a>
         <div class="topbar-actions">
-          <span class="saved-status"><span class="status-dot"></span> Saved locally</span>
+          <span class="saved-status"><span class="status-dot"></span> Private · runs in your browser</span>
           <button class="ghost-button" id="resetButton">Reset</button>
           <button class="download-button" id="downloadButton">
             <span>↓</span> Export PNG
@@ -40,7 +40,7 @@
               <span class="upload-icon">↑</span>
               <span class="drop-title">Add screenshot to selected device</span>
               <span class="drop-subtitle">or <u>browse your files</u></span>
-              <span class="file-name" id="fileName">PNG, JPG or WebP · max 20 MB</span>
+              <span class="file-name" id="fileName">PNG, JPG, WebP or GIF · max 20 MB</span>
             </label>
           </section>
 
@@ -94,19 +94,19 @@
             <div class="section-heading"><span>04</span><strong>Fine tune selected device</strong></div>
             <label class="range-row">
               <span>Scale <output id="scaleValue">100%</output></span>
-              <input id="scaleRange" type="range" min="70" max="125" value="100" />
+              <input id="scaleRange" type="range" min="40" max="150" value="100" />
             </label>
             <label class="range-row">
               <span>Rotation <output id="rotationValue">0°</output></span>
-              <input id="rotationRange" type="range" min="-12" max="12" value="0" />
+              <input id="rotationRange" type="range" min="-30" max="30" value="0" />
             </label>
             <label class="range-row">
               <span>Horizontal position <output id="positionXValue">0%</output></span>
-              <input id="positionXRange" type="range" min="-45" max="45" value="0" />
+              <input id="positionXRange" type="range" min="-60" max="60" value="0" />
             </label>
             <label class="range-row">
               <span>Vertical position <output id="positionYValue">0%</output></span>
-              <input id="positionYRange" type="range" min="-45" max="45" value="0" />
+              <input id="positionYRange" type="range" min="-60" max="60" value="0" />
             </label>
           </section>
 
@@ -127,15 +127,15 @@
           <div class="preview-toolbar">
             <div>
               <span class="preview-label">Live preview</span>
-              <span class="preview-size" id="previewSize">1080 × 1350 px</span>
+              <span class="preview-size" id="previewSize">1200 × 1500 px</span>
             </div>
             <button class="icon-button" id="fullscreenButton" title="Open preview fullscreen" aria-label="Open preview fullscreen">⤢</button>
           </div>
           <div class="canvas-wrap" id="canvasWrap">
-            <div class="preview-canvas gradient" id="previewCanvas"><div class="ambient-glow"></div><div class="device-stage" id="deviceStage"></div></div>
+            <canvas class="preview-canvas" id="previewCanvas" aria-label="Mockup preview"></canvas>
           </div>
           <div class="preview-footer">
-            <span><span class="kbd">Tip</span> Use a clear screenshot for the sharpest result</span>
+            <span><span class="kbd">Tip</span> Drag a device to move it · drop a screenshot onto it</span>
             <span id="imageDimensions"></span>
           </div>
         </section>

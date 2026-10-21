@@ -59,8 +59,7 @@ The published address is:
 ## Project files
 
 - `index.html` — app structure and controls
-- `styles.css` — layout, responsive styling, and device frames
-- `app.js` — image handling, live preview state, and PNG export
-- `macbook-frame.svg` — the supplied MacBook desktop frame asset
+- `styles.css` — layout and responsive styling
+- `app.js` — canvas renderer (devices, preview, drag, PNG export)
 
 No package installation or build step is required.
