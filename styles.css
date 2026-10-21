@@ -158,3 +158,4 @@ input[type=range] { width: 100%; height: 4px; accent-color: var(--cyan); cursor:
 .size-hint span { color: var(--cyan); font: 700 15px var(--mono); }
 .size-hint small { color: #7d78a3; font-size: 10px; line-height: 1.4; }
 .size-hint.warn { border-color: rgba(255, 47, 208, .5); background: rgba(255, 47, 208, .08); }
+.size-hint small b { color: var(--ink); font-family: var(--mono); font-weight: 500; }

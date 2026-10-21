@@ -17,10 +17,10 @@ const LAPTOP = { w: 1000, h: 561 };
 const MONITOR = { w: 1000, h: 796 };
 // Ideal screenshot sizes: same aspect ratio as the device screen, so nothing gets cropped.
 const IDEAL = {
-  phone: { ratio: 250 / 538, size: '1179 × 2556 px', note: 'iPhone screenshot' },
-  phoneLandscape: { ratio: 538 / 250, size: '2556 × 1179 px', note: 'iPhone screenshot, rotated' },
-  desktop: { ratio: 812 / 507, size: '2880 × 1800 px', note: 'MacBook, 16:10 (1440 × 900 also works)' },
-  monitor: { ratio: 952 / 536, size: '2560 × 1440 px', note: 'Full-screen capture, 16:9 (1920 × 1080 also works)' }
+  phone: { ratio: 250 / 538, size: '1179 × 2556 px', chrome: '393 × 852 · DPR 3' },
+  phoneLandscape: { ratio: 538 / 250, size: '2556 × 1179 px', chrome: '852 × 393 · DPR 3' },
+  desktop: { ratio: 812 / 507, size: '2880 × 1800 px', chrome: '1440 × 900 · DPR 2' },
+  monitor: { ratio: 952 / 536, size: '2560 × 1440 px', chrome: '1280 × 720 · DPR 2 (or 1920 × 1080 · DPR 1)' }
 };
 const NATURAL = { phone: PHONE, desktop: LAPTOP, monitor: MONITOR };
 const EDGE = { phone: '#2a2c30', desktop: '#a3a6ab', monitor: '#9da0a5' };
@@ -582,7 +582,7 @@ function syncControls() {
   $('#positionYValue').textContent = `${y}%`;
   $('#fileName').textContent = device.fileName || 'PNG, JPG, WebP or GIF · max 20 MB';
   const ideal = IDEAL[device.type === 'phone' && device.landscape ? 'phoneLandscape' : device.type];
-  $('#sizeHint').innerHTML = `<strong>Ideal size for this ${LABELS[device.type].toLowerCase()}</strong><span>${ideal.size}</span><small>${ideal.note}. Other sizes are centered and cropped to fit.</small>`;
+  $('#sizeHint').innerHTML = `<strong>Ideal size for this ${LABELS[device.type].toLowerCase()}</strong><span>${ideal.size}</span><small>In Chrome DevTools (Ctrl+Shift+M, Responsive), set <b>${ideal.chrome}</b>, then ⋮ → Capture screenshot. Other sizes are centered and cropped.</small>`;
   const off = device.image && Math.abs(device.image.naturalWidth / device.image.naturalHeight / ideal.ratio - 1) > .03;
   $('#sizeHint').classList.toggle('warn', Boolean(off));
   $('#imageDimensions').textContent = device.image ? `${device.image.naturalWidth} × ${device.image.naturalHeight} px${off ? ' · will be cropped' : ' · perfect fit'}` : '';
