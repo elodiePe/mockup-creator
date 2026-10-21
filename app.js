@@ -1,4 +1,4 @@
-// Framecraft — one canvas renderer drives both the live preview and the PNG export,
+// mockup.lab — one canvas renderer drives both the live preview and the PNG export,
 // so what you see is exactly what you download.
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024;
@@ -786,7 +786,7 @@ async function exportPng() {
     if (!blob) return showToast('Export failed. Try a smaller format.');
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.download = `framecraft-${state.format}-${out.width}x${out.height}.png`;
+    link.download = `mockuplab-${state.format}-${out.width}x${out.height}.png`;
     link.href = url;
     document.body.append(link);
     link.click();

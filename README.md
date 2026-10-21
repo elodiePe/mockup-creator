@@ -1,4 +1,4 @@
-# Framecraft
+# mockup.lab
 
 A small, local-only mockup creator. Upload a screenshot, select a phone or desktop frame, choose a background, tune the scale/rotation, and export a PNG.
 
