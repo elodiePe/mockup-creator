@@ -152,3 +152,9 @@ input[type=range] { width: 100%; height: 4px; accent-color: var(--cyan); cursor:
   .preview-size { display: block; margin: 4px 0 0; }
 }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+.size-hint { display: grid; gap: 3px; margin-top: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: rgba(122, 92, 255, .08); }
+.size-hint strong { color: var(--muted); font: 10px var(--mono); text-transform: uppercase; letter-spacing: 1px; font-weight: 500; }
+.size-hint span { color: var(--cyan); font: 700 15px var(--mono); }
+.size-hint small { color: #7d78a3; font-size: 10px; line-height: 1.4; }
+.size-hint.warn { border-color: rgba(255, 47, 208, .5); background: rgba(255, 47, 208, .08); }

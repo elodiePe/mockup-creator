@@ -15,6 +15,13 @@ const DEFAULT_COLOR = '#f2a187';
 const PHONE = { w: 272, h: 560, radius: 46 };
 const LAPTOP = { w: 1000, h: 561 };
 const MONITOR = { w: 1000, h: 796 };
+// Ideal screenshot sizes: same aspect ratio as the device screen, so nothing gets cropped.
+const IDEAL = {
+  phone: { ratio: 250 / 538, size: '1179 × 2556 px', note: 'iPhone screenshot' },
+  phoneLandscape: { ratio: 538 / 250, size: '2556 × 1179 px', note: 'iPhone screenshot, rotated' },
+  desktop: { ratio: 812 / 507, size: '2880 × 1800 px', note: 'MacBook, 16:10 (1440 × 900 also works)' },
+  monitor: { ratio: 952 / 536, size: '2560 × 1440 px', note: 'Full-screen capture, 16:9 (1920 × 1080 also works)' }
+};
 const NATURAL = { phone: PHONE, desktop: LAPTOP, monitor: MONITOR };
 const EDGE = { phone: '#2a2c30', desktop: '#a3a6ab', monitor: '#9da0a5' };
 const LABELS = { phone: 'Phone', desktop: 'Laptop', monitor: 'Big screen' };
@@ -574,7 +581,11 @@ function syncControls() {
   $('#positionXValue').textContent = `${x}%`;
   $('#positionYValue').textContent = `${y}%`;
   $('#fileName').textContent = device.fileName || 'PNG, JPG, WebP or GIF · max 20 MB';
-  $('#imageDimensions').textContent = device.image ? `${device.image.naturalWidth} × ${device.image.naturalHeight} px` : '';
+  const ideal = IDEAL[device.type === 'phone' && device.landscape ? 'phoneLandscape' : device.type];
+  $('#sizeHint').innerHTML = `<strong>Ideal size for this ${LABELS[device.type].toLowerCase()}</strong><span>${ideal.size}</span><small>${ideal.note}. Other sizes are centered and cropped to fit.</small>`;
+  const off = device.image && Math.abs(device.image.naturalWidth / device.image.naturalHeight / ideal.ratio - 1) > .03;
+  $('#sizeHint').classList.toggle('warn', Boolean(off));
+  $('#imageDimensions').textContent = device.image ? `${device.image.naturalWidth} × ${device.image.naturalHeight} px${off ? ' · will be cropped' : ' · perfect fit'}` : '';
   $('#previewSize').textContent = `${state.devices.length} device${state.devices.length === 1 ? '' : 's'} · ${formats[state.format].label}`;
 }
 
