@@ -213,6 +213,22 @@ $('#fullscreenButton').addEventListener('click', () => { if (previewCanvas.reque
 function roundedRect(context, x, y, width, height, radius) {
   context.beginPath(); context.roundRect(x, y, width, height, radius); context.fill();
 }
+function drawCoverImage(context, image, x, y, width, height) {
+  const imageRatio = image.naturalWidth / image.naturalHeight;
+  const targetRatio = width / height;
+  let sourceWidth = image.naturalWidth;
+  let sourceHeight = image.naturalHeight;
+  let sourceX = 0;
+  let sourceY = 0;
+  if (imageRatio > targetRatio) {
+    sourceWidth = image.naturalHeight * targetRatio;
+    sourceX = (image.naturalWidth - sourceWidth) / 2;
+  } else {
+    sourceHeight = image.naturalWidth / targetRatio;
+    sourceY = (image.naturalHeight - sourceHeight) / 2;
+  }
+  context.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, x, y, width, height);
+}
 function drawMockup(context, device, x, y, frameWidth, frameHeight) {
   const isPhone = device.type === 'phone';
   context.save();
@@ -225,17 +241,34 @@ function drawMockup(context, device, x, y, frameWidth, frameHeight) {
   context.fillStyle = isPhone ? '#17191c' : '#050607';
   roundedRect(context, 0, 0, frameWidth, shellHeight, isPhone ? frameWidth * .13 : 16);
   context.shadowColor = 'transparent';
-  const inset = isPhone ? 8 : 13;
-  const bottomInset = isPhone ? 8 : 8;
-  if (device.image) context.drawImage(device.image, inset, inset, frameWidth - inset * 2, shellHeight - inset - bottomInset);
-  else { context.fillStyle = '#f3f4f2'; context.fillRect(inset, inset, frameWidth - inset * 2, shellHeight - inset - bottomInset); }
   if (isPhone) {
+    const inset = 8;
+    const screenWidth = frameWidth - inset * 2;
+    const screenHeight = shellHeight - inset * 2;
+    context.save();
+    context.beginPath();
+    context.roundRect(inset, inset, screenWidth, screenHeight, frameWidth * .08);
+    context.clip();
+    if (device.image) drawCoverImage(context, device.image, inset, inset, screenWidth, screenHeight);
+    else { context.fillStyle = '#f3f4f2'; context.fillRect(inset, inset, screenWidth, screenHeight); }
+    context.restore();
     context.fillStyle = '#050607';
     roundedRect(context, frameWidth / 2 - frameWidth * .17, 10, frameWidth * .34, 24, 13);
   } else {
+    const screenX = frameWidth * .155;
+    const screenY = frameHeight * .146;
+    const screenWidth = frameWidth * .69;
+    const screenHeight = frameHeight * .692;
     context.fillStyle = '#f3f4f2';
-    context.fillRect(frameWidth * .155, frameHeight * .146, frameWidth * .69, frameHeight * .692);
-    if (device.image) context.drawImage(device.image, frameWidth * .155, frameHeight * .146, frameWidth * .69, frameHeight * .692);
+    context.fillRect(screenX, screenY, screenWidth, screenHeight);
+    if (device.image) {
+      context.save();
+      context.beginPath();
+      context.rect(screenX, screenY, screenWidth, screenHeight);
+      context.clip();
+      drawCoverImage(context, device.image, screenX, screenY, screenWidth, screenHeight);
+      context.restore();
+    }
     if (macbookFrame.complete) context.drawImage(macbookFrame, 0, 0, frameWidth, frameHeight);
   }
   context.restore();
