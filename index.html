@@ -121,8 +121,29 @@
             </label>
           </section>
 
+          <section class="control-section status-section">
+            <div class="section-heading"><span>05</span><strong>Status bar</strong>
+              <label class="switch"><input type="checkbox" id="statusToggle" checked /><span></span></label>
+            </div>
+            <div id="statusFields">
+              <label class="range-row time-row">
+                <span>Time</span>
+                <input id="statusTime" type="time" value="09:41" />
+              </label>
+              <label class="range-row">
+                <span>Battery <output id="batteryValue">80%</output></span>
+                <input id="batteryRange" type="range" min="0" max="100" value="80" />
+              </label>
+              <label class="range-row">
+                <span>Notifications <output id="notifValue">2</output></span>
+                <input id="notifRange" type="range" min="0" max="4" value="2" />
+              </label>
+              <p class="field-note">Signal, wifi and battery icons. Phones get an iOS-style bar, laptops and big screens a macOS-style menu bar.</p>
+            </div>
+          </section>
+
           <section class="control-section format-section">
-            <div class="section-heading"><span>05</span><strong>Export format</strong></div>
+            <div class="section-heading"><span>06</span><strong>Export format</strong></div>
             <div class="format-options" role="group" aria-label="Export format">
               <button class="format-option" data-format="square"><strong>1:1</strong><small>Square</small></button>
               <button class="format-option active" data-format="portrait"><strong>4:5</strong><small>Portrait</small></button>

@@ -34,9 +34,11 @@ const GRADIENTS = [
   { name: 'Midnight', stops: ['#0b1020', '#1d2b64', '#3a6ea5'] }
 ];
 
+const defaultStatus = () => ({ on: true, time: '09:41', battery: 80, notifs: 2 });
+
 const newDevice = (id, type) => ({
   id, type, scale: 100, rotation: type === 'phone' && id === 1 ? -4 : 0, x: 0, y: 0,
-  depth: 0, tilt: 0, landscape: false, image: null, fileName: ''
+  depth: 0, tilt: 0, landscape: false, barLight: null, image: null, fileName: ''
 });
 
 // Natural size of a device in layout units, honouring orientation.
@@ -48,6 +50,7 @@ function dimsOf(device) {
 const state = {
   background: 'gradient',
   gradient: 0,
+  status: defaultStatus(),
   color: DEFAULT_COLOR,
   format: 'portrait',
   backgroundImage: null,
@@ -190,6 +193,7 @@ function drawPhone(c, device, shadow, preview) {
   if (device.image) drawCover(c, device.image, sx, sy, sw, sh);
   else drawPlaceholder(c, sx, sy, sw, sh, false, preview);
   drawGlare(c, sx, sy, sw, sh);
+  if (!device.landscape) drawStatusBar(c, 'phone', device, sx, sy, sw);
   c.restore();
 
   // Dynamic island
@@ -240,6 +244,7 @@ function drawLaptop(c, device, shadow, preview) {
   if (device.image) drawCover(c, device.image, sx, sy, sw, sh);
   else drawPlaceholder(c, sx, sy, sw, sh, true, preview);
   drawGlare(c, sx, sy, sw, sh);
+  drawStatusBar(c, 'desktop', device, sx, sy, sw);
   c.restore();
 
   // Notch + camera
@@ -346,6 +351,7 @@ function drawMonitor(c, device, shadow, preview) {
   if (device.image) drawCover(c, device.image, sx, sy, sw, sh);
   else drawPlaceholder(c, sx, sy, sw, sh, true, preview);
   drawGlare(c, sx, sy, sw, sh);
+  drawStatusBar(c, 'monitor', device, sx, sy, sw);
   c.restore();
   c.fillStyle = 'rgba(80,84,90,.35)';
   c.beginPath();
@@ -364,6 +370,163 @@ function fillSilhouette(c, type) {
     pathRoundRect(c, 46, 535, 908, 26, [3, 3, 26, 26]);
     c.fill();
   } else monitorSilhouette(c);
+}
+
+/* ---------- Status bar ---------- */
+
+function drawBattery(c, x, cy, w, h, level, color) {
+  c.save();
+  c.globalAlpha = .5;
+  c.lineWidth = 1;
+  pathRoundRect(c, x + .5, cy - h / 2 + .5, w - 1, h - 1, h * .3);
+  c.stroke();
+  c.globalAlpha = .5;
+  pathRoundRect(c, x + w + 1, cy - h * .17, 1.6, h * .34, .8);
+  c.fill();
+  c.restore();
+  const inner = (w - 4) * Math.max(0, Math.min(100, level)) / 100;
+  if (inner <= 0) return;
+  c.save();
+  c.fillStyle = level <= 20 ? '#ff453a' : color;
+  pathRoundRect(c, x + 2, cy - h / 2 + 2, inner, h - 4, h * .2);
+  c.fill();
+  c.restore();
+}
+
+function drawWifi(c, cx, baseY, size) {
+  c.save();
+  c.lineCap = 'round';
+  c.lineWidth = size * .17;
+  [1, .66, .33].forEach((f) => {
+    c.beginPath();
+    c.arc(cx, baseY, size * f, Math.PI * 1.22, Math.PI * 1.78);
+    c.stroke();
+  });
+  c.beginPath();
+  c.arc(cx, baseY, size * .08, 0, Math.PI * 2);
+  c.fill();
+  c.restore();
+}
+
+function drawSignal(c, x, baseY, w, h) {
+  const bar = w / 5.4;
+  for (let i = 0; i < 4; i++) {
+    const bh = h * (.35 + i * .22);
+    pathRoundRect(c, x + i * bar * 1.47, baseY - bh, bar, bh, bar * .3);
+    c.fill();
+  }
+}
+
+function drawNotifIcon(c, kind, x, cy, s) {
+  c.save();
+  c.lineWidth = Math.max(1, s * .13);
+  c.lineJoin = 'round';
+  if (kind === 0) {
+    pathRoundRect(c, x, cy - s * .45, s, s * .72, s * .22);
+    c.fill();
+    c.beginPath();
+    c.moveTo(x + s * .22, cy + s * .2);
+    c.lineTo(x + s * .18, cy + s * .55);
+    c.lineTo(x + s * .52, cy + s * .25);
+    c.closePath();
+    c.fill();
+  } else if (kind === 1) {
+    c.beginPath();
+    c.arc(x + s / 2, cy - s * .05, s * .38, Math.PI, 0);
+    c.lineTo(x + s * .95, cy + s * .35);
+    c.lineTo(x + s * .05, cy + s * .35);
+    c.closePath();
+    c.fill();
+    c.beginPath();
+    c.arc(x + s / 2, cy + s * .5, s * .13, 0, Math.PI * 2);
+    c.fill();
+  } else {
+    pathRoundRect(c, x, cy - s * .35, s, s * .7, s * .15);
+    c.stroke();
+    c.beginPath();
+    c.moveTo(x + s * .05, cy - s * .28);
+    c.lineTo(x + s / 2, cy + s * .08);
+    c.lineTo(x + s * .95, cy - s * .28);
+    c.stroke();
+  }
+  c.restore();
+}
+
+// Phone: iOS-style status bar around the Dynamic Island. Desktop: macOS-style menu bar.
+function drawStatusBar(c, mode, device, x, y, w) {
+  const s = state.status;
+  if (!s.on) return;
+  const light = device.barLight ?? device.type !== 'phone';
+  const color = light ? '#ffffff' : '#111111';
+  const [hh, mm] = s.time.split(':').map(Number);
+  const minutes = String(mm || 0).padStart(2, '0');
+  c.save();
+  c.fillStyle = color;
+  c.strokeStyle = color;
+  c.textBaseline = 'middle';
+  if (mode === 'phone') {
+    const cy = y + 23;
+    c.font = "700 13px 'DM Sans', sans-serif";
+    c.textAlign = 'left';
+    c.fillText(`${hh || 0}:${minutes}`, x + 22, cy + .5);
+    for (let i = 0; i < Math.min(s.notifs, 2); i++) drawNotifIcon(c, i % 3, x + 59 + i * 13, cy, 9);
+    let right = x + w - 17;
+    drawBattery(c, right - 21, cy, 21, 10.5, s.battery, color);
+    right -= 25;
+    drawWifi(c, right - 7, cy + 4.5, 8.5);
+    right -= 18;
+    drawSignal(c, right - 12, cy + 4.5, 12, 10);
+  } else {
+    const u = mode === 'monitor' ? 1.15 : 1;
+    const h = 24 * u;
+    c.fillStyle = light ? 'rgba(0,0,0,.32)' : 'rgba(255,255,255,.6)';
+    c.fillRect(x, y, w, h);
+    c.fillStyle = color;
+    const cy = y + h / 2 + .5;
+    c.font = `500 ${11.5 * u}px 'DM Sans', sans-serif`;
+    c.textAlign = 'left';
+    let left = x + 16 * u;
+    ['Finder', 'File', 'Edit', 'View', 'Go', 'Window', 'Help'].forEach((item, i) => {
+      c.font = `${i === 0 ? 700 : 500} ${11.5 * u}px 'DM Sans', sans-serif`;
+      c.fillText(item, left, cy);
+      left += c.measureText(item).width + 16 * u;
+    });
+    const day = new Date().toLocaleDateString('en-US', { weekday: 'short' });
+    const h12 = ((hh || 0) % 12) || 12;
+    const clock = `${day} ${h12}:${minutes} ${(hh || 0) >= 12 ? 'PM' : 'AM'}`;
+    c.font = `500 ${11.5 * u}px 'DM Sans', sans-serif`;
+    c.textAlign = 'right';
+    let right = x + w - 14 * u;
+    c.fillText(clock, right, cy);
+    right -= c.measureText(clock).width + 14 * u;
+    drawBattery(c, right - 22 * u, cy, 22 * u, 10.5 * u, s.battery, color);
+    right -= 22 * u + 14 * u;
+    drawWifi(c, right - 7 * u, cy + 4.5 * u, 8.5 * u);
+    right -= 15 * u + 8 * u;
+    for (let i = 0; i < Math.min(s.notifs, 4); i++) {
+      right -= 11 * u;
+      drawNotifIcon(c, i % 3, right, cy, 10 * u);
+      right -= 7 * u;
+    }
+  }
+  c.restore();
+}
+
+// True when the top strip of a screenshot is dark, so the bar should be drawn in white.
+function isDarkTop(image) {
+  try {
+    const probe = document.createElement('canvas');
+    probe.width = 16;
+    probe.height = 2;
+    const pc = probe.getContext('2d', { willReadFrequently: true });
+    pc.drawImage(image, 0, 0, image.naturalWidth, Math.max(1, image.naturalHeight * .06), 0, 0, 16, 2);
+    const { data } = pc.getImageData(0, 0, 16, 2);
+    let sum = 0;
+    for (let i = 0; i < data.length; i += 4) sum += .299 * data[i] + .587 * data[i + 1] + .114 * data[i + 2];
+    return sum / (data.length / 4) < 140;
+  } catch {
+    return null;
+  }
 }
 
 /* ---------- Layout ---------- */
@@ -576,6 +739,14 @@ function syncControls() {
   document.querySelectorAll('[data-orient]').forEach((item) => item.classList.toggle('active', (item.dataset.orient === 'landscape') === device.landscape));
   document.querySelectorAll('.gradient-chip').forEach((chip, i) => chip.classList.toggle('active', i === state.gradient));
   $('#gradientPresets').style.display = state.background === 'gradient' ? 'flex' : 'none';
+  const st = state.status;
+  $('#statusToggle').checked = st.on;
+  $('#statusFields').classList.toggle('off', !st.on);
+  $('#statusTime').value = st.time;
+  $('#batteryRange').value = st.battery;
+  $('#notifRange').value = st.notifs;
+  $('#batteryValue').textContent = `${st.battery}%`;
+  $('#notifValue').textContent = `${st.notifs}`;
   $('#scaleValue').textContent = `${device.scale}%`;
   $('#rotationValue').textContent = `${device.rotation}°`;
   $('#positionXValue').textContent = `${x}%`;
@@ -615,6 +786,7 @@ async function loadFile(file, device = selectedDevice()) {
   if (file.size > MAX_FILE_SIZE) return showToast('That image is larger than 20 MB.');
   try {
     device.image = await loadImage(file);
+    device.barLight = isDarkTop(device.image);
   } catch {
     return showToast('That image could not be read.');
   }
@@ -630,6 +802,10 @@ fileInput.addEventListener('change', (event) => { loadFile(event.target.files[0]
 dropzone.addEventListener('drop', (event) => loadFile(event.dataTransfer.files[0]));
 $('#addPhoneButton').addEventListener('click', () => addDevice('phone'));
 $('#addDesktopButton').addEventListener('click', () => addDevice('desktop'));
+$('#statusToggle').addEventListener('change', (event) => { state.status.on = event.target.checked; redraw(); });
+$('#statusTime').addEventListener('input', (event) => { if (event.target.value) { state.status.time = event.target.value; redraw(); } });
+$('#batteryRange').addEventListener('input', (event) => { state.status.battery = Number(event.target.value); redraw(); });
+$('#notifRange').addEventListener('input', (event) => { state.status.notifs = Number(event.target.value); redraw(); });
 $('#addMonitorButton').addEventListener('click', () => addDevice('monitor'));
 document.querySelectorAll('[data-orient]').forEach((button) => button.addEventListener('click', () => {
   selectedDevice().landscape = button.dataset.orient === 'landscape';
@@ -706,7 +882,7 @@ document.querySelectorAll('.format-option').forEach((button) => button.addEventL
 $('#resetButton').addEventListener('click', () => {
   Object.assign(state, {
     background: 'gradient', gradient: 0, color: DEFAULT_COLOR, format: 'portrait', backgroundImage: null,
-    selectedId: 1, nextId: 2, devices: [newDevice(1, 'phone')]
+    selectedId: 1, nextId: 2, status: defaultStatus(), devices: [newDevice(1, 'phone')]
   });
   $('#backgroundFileName').textContent = 'No image selected';
   $('#backgroundColor').value = DEFAULT_COLOR;
