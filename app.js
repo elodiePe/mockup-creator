@@ -27,7 +27,7 @@ const GRADIENTS = [
   { name: 'Midnight', stops: ['#0b1020', '#1d2b64', '#3a6ea5'] }
 ];
 
-const defaultStatus = () => ({ on: true, time: '09:41', battery: 80, notifs: 2, autoBg: true, bg: '#111111' });
+const defaultStatus = () => ({ on: true, time: '09:41', battery: 80, notifs: 1, autoBg: true, bg: '#111111' });
 
 const newDevice = (id, type) => ({
   id, type, scale: 100, rotation: type === 'phone' && id === 1 ? -4 : 0, x: 0, y: 0,
@@ -367,7 +367,7 @@ function fillSilhouette(c, type) {
 // Height of the fixed bar band at the top of the screen (0 when the status bar is off).
 function bandHeight(device) {
   if (!state.status.on || (device.type === 'phone' && device.landscape)) return 0;
-  return { phone: 32, desktop: 24, monitor: 27.6 }[device.type];
+  return { phone: 30, desktop: 18.7, monitor: 27.6 }[device.type];
 }
 
 function luminance(hex) {
@@ -465,14 +465,6 @@ function drawNotifIcon(c, kind, x, cy, s) {
     c.lineTo(x + s * .52, cy + s * .25);
     c.closePath();
     c.fill();
-  } else {
-    pathRoundRect(c, x, cy - s * .35, s, s * .7, s * .15);
-    c.stroke();
-    c.beginPath();
-    c.moveTo(x + s * .05, cy - s * .28);
-    c.lineTo(x + s / 2, cy + s * .08);
-    c.lineTo(x + s * .95, cy - s * .28);
-    c.stroke();
   }
   c.restore();
 }
@@ -494,7 +486,7 @@ function drawStatusBar(c, mode, device, x, y, w) {
     c.font = "700 13px 'DM Sans', sans-serif";
     c.textAlign = 'left';
     c.fillText(`${hh || 0}:${minutes}`, x + 22, cy + .5);
-    for (let i = 0; i < Math.min(s.notifs, 2); i++) drawNotifIcon(c, i % 2 * 2, x + 59 + i * 13, cy, 9);
+    for (let i = 0; i < Math.min(s.notifs, 1); i++) drawNotifIcon(c, 0, x + 59, cy, 9);
     let right = x + w - 17;
     drawBattery(c, right - 21, cy, 21, 10.5, s.battery, color);
     right -= 25;
@@ -502,7 +494,7 @@ function drawStatusBar(c, mode, device, x, y, w) {
     right -= 18;
     drawSignal(c, right - 12, cy + 4.5, 12, 10);
   } else {
-    const u = mode === 'monitor' ? 1.15 : 1;
+    const u = mode === 'monitor' ? 1.15 : .78;
     const h = 24 * u;
     if (!device.image) {
       c.fillStyle = light ? 'rgba(0,0,0,.32)' : 'rgba(255,255,255,.6)';
@@ -530,9 +522,9 @@ function drawStatusBar(c, mode, device, x, y, w) {
     right -= 22 * u + 14 * u;
     drawWifi(c, right - 7 * u, cy + 4.5 * u, 8.5 * u);
     right -= 15 * u + 8 * u;
-    for (let i = 0; i < Math.min(s.notifs, 4); i++) {
+    for (let i = 0; i < Math.min(s.notifs, 1); i++) {
       right -= 11 * u;
-      drawNotifIcon(c, i % 2 * 2, right, cy, 10 * u);
+      drawNotifIcon(c, 0, right, cy, 10 * u);
       right -= 7 * u;
     }
   }
@@ -777,7 +769,7 @@ function syncControls() {
   $('#batteryRange').value = st.battery;
   $('#notifRange').value = st.notifs;
   $('#batteryValue').textContent = `${st.battery}%`;
-  $('#notifValue').textContent = `${st.notifs}`;
+  $('#notifValue').textContent = st.notifs ? 'on' : 'off';
   $('#scaleValue').textContent = `${device.scale}%`;
   $('#rotationValue').textContent = `${device.rotation}°`;
   $('#positionXValue').textContent = `${x}%`;
