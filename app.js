@@ -15,13 +15,6 @@ const DEFAULT_COLOR = '#f2a187';
 const PHONE = { w: 272, h: 560, radius: 46 };
 const LAPTOP = { w: 1000, h: 561 };
 const MONITOR = { w: 1000, h: 796 };
-// Ideal screenshot sizes: same aspect ratio as the device screen, so nothing gets cropped.
-const IDEAL = {
-  phone: { ratio: 250 / 538, size: '1179 × 2556 px', chrome: '393 × 852 · DPR 3' },
-  phoneLandscape: { ratio: 538 / 250, size: '2556 × 1179 px', chrome: '852 × 393 · DPR 3' },
-  desktop: { ratio: 812 / 507, size: '2880 × 1800 px', chrome: '1440 × 900 · DPR 2' },
-  monitor: { ratio: 952 / 536, size: '2560 × 1440 px', chrome: '1280 × 720 · DPR 2 (or 1920 × 1080 · DPR 1)' }
-};
 const NATURAL = { phone: PHONE, desktop: LAPTOP, monitor: MONITOR };
 const EDGE = { phone: '#2a2c30', desktop: '#a3a6ab', monitor: '#9da0a5' };
 const LABELS = { phone: 'Phone', desktop: 'Laptop', monitor: 'Big screen' };
@@ -34,11 +27,11 @@ const GRADIENTS = [
   { name: 'Midnight', stops: ['#0b1020', '#1d2b64', '#3a6ea5'] }
 ];
 
-const defaultStatus = () => ({ on: true, time: '09:41', battery: 80, notifs: 2 });
+const defaultStatus = () => ({ on: true, time: '09:41', battery: 80, notifs: 2, autoBg: true, bg: '#111111' });
 
 const newDevice = (id, type) => ({
   id, type, scale: 100, rotation: type === 'phone' && id === 1 ? -4 : 0, x: 0, y: 0,
-  depth: 0, tilt: 0, landscape: false, barLight: null, image: null, fileName: ''
+  depth: 0, tilt: 0, landscape: false, barLight: null, barColor: null, image: null, fileName: ''
 });
 
 // Natural size of a device in layout units, honouring orientation.
@@ -190,19 +183,18 @@ function drawPhone(c, device, shadow, preview) {
   c.save();
   pathRoundRect(c, sx, sy, sw, sh, radius - inset);
   c.clip();
-  if (device.image) drawCover(c, device.image, sx, sy, sw, sh);
-  else drawPlaceholder(c, sx, sy, sw, sh, false, preview);
+  drawScreen(c, device, sx, sy, sw, sh, false, preview);
   drawGlare(c, sx, sy, sw, sh);
   if (!device.landscape) drawStatusBar(c, 'phone', device, sx, sy, sw);
   c.restore();
 
   // Dynamic island
   c.fillStyle = '#000';
-  pathRoundRect(c, w / 2 - 44, 21, 88, 26, 13);
+  pathRoundRect(c, w / 2 - 44, 15, 88, 26, 13);
   c.fill();
   c.fillStyle = '#10151f';
   c.beginPath();
-  c.arc(w / 2 + 28, 34, 5, 0, Math.PI * 2);
+  c.arc(w / 2 + 28, 28, 5, 0, Math.PI * 2);
   c.fill();
 }
 
@@ -241,8 +233,7 @@ function drawLaptop(c, device, shadow, preview) {
   c.save();
   pathRoundRect(c, sx, sy, sw, sh, 8);
   c.clip();
-  if (device.image) drawCover(c, device.image, sx, sy, sw, sh);
-  else drawPlaceholder(c, sx, sy, sw, sh, true, preview);
+  drawScreen(c, device, sx, sy, sw, sh, true, preview);
   drawGlare(c, sx, sy, sw, sh);
   drawStatusBar(c, 'desktop', device, sx, sy, sw);
   c.restore();
@@ -348,8 +339,7 @@ function drawMonitor(c, device, shadow, preview) {
   c.save();
   pathRoundRect(c, sx, sy, sw, sh, 4);
   c.clip();
-  if (device.image) drawCover(c, device.image, sx, sy, sw, sh);
-  else drawPlaceholder(c, sx, sy, sw, sh, true, preview);
+  drawScreen(c, device, sx, sy, sw, sh, true, preview);
   drawGlare(c, sx, sy, sw, sh);
   drawStatusBar(c, 'monitor', device, sx, sy, sw);
   c.restore();
@@ -370,6 +360,51 @@ function fillSilhouette(c, type) {
     pathRoundRect(c, 46, 535, 908, 26, [3, 3, 26, 26]);
     c.fill();
   } else monitorSilhouette(c);
+}
+
+/* ---------- Screen content ---------- */
+
+// Height of the fixed bar band at the top of the screen (0 when the status bar is off).
+function bandHeight(device) {
+  if (!state.status.on || (device.type === 'phone' && device.landscape)) return 0;
+  return { phone: 32, desktop: 24, monitor: 27.6 }[device.type];
+}
+
+function luminance(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  return .299 * (n >> 16) + .587 * ((n >> 8) & 255) + .114 * (n & 255);
+}
+
+function barLight(device) {
+  if (!state.status.autoBg) return luminance(state.status.bg) < 140;
+  return device.barLight ?? device.type !== 'phone';
+}
+
+function bandColor(device) {
+  return state.status.autoBg ? (device.barColor || '#000000') : state.status.bg;
+}
+
+// The screenshot sits below the bar band, which keeps its own fixed background.
+function drawScreen(c, device, x, y, w, h, dark, preview) {
+  if (!device.image) return drawPlaceholder(c, x, y, w, h, dark, preview);
+  const band = bandHeight(device);
+  if (band > 0) {
+    c.fillStyle = bandColor(device);
+    c.fillRect(x, y, w, band);
+  }
+  drawCover(c, device.image, x, y + band, w, h - band);
+}
+
+// Screenshot size that fills the visible area exactly, as a Chrome DevTools preset.
+function idealFor(device) {
+  const screens = { phone: [250, 538], phoneLandscape: [538, 250], desktop: [812, 507], monitor: [952, 536] };
+  const logical = { phone: [393, 3], phoneLandscape: [852, 3], desktop: [1440, 2], monitor: [1280, 2] };
+  const key = device.type === 'phone' && device.landscape ? 'phoneLandscape' : device.type;
+  const [sw, sh] = screens[key];
+  const ratio = sw / (sh - bandHeight(device));
+  const [lw, dpr] = logical[key];
+  const lh = Math.round(lw / ratio);
+  return { ratio, size: `${lw * dpr} × ${lh * dpr} px`, chrome: `${lw} × ${lh} · DPR ${dpr}` };
 }
 
 /* ---------- Status bar ---------- */
@@ -430,16 +465,6 @@ function drawNotifIcon(c, kind, x, cy, s) {
     c.lineTo(x + s * .52, cy + s * .25);
     c.closePath();
     c.fill();
-  } else if (kind === 1) {
-    c.beginPath();
-    c.arc(x + s / 2, cy - s * .05, s * .38, Math.PI, 0);
-    c.lineTo(x + s * .95, cy + s * .35);
-    c.lineTo(x + s * .05, cy + s * .35);
-    c.closePath();
-    c.fill();
-    c.beginPath();
-    c.arc(x + s / 2, cy + s * .5, s * .13, 0, Math.PI * 2);
-    c.fill();
   } else {
     pathRoundRect(c, x, cy - s * .35, s, s * .7, s * .15);
     c.stroke();
@@ -456,7 +481,7 @@ function drawNotifIcon(c, kind, x, cy, s) {
 function drawStatusBar(c, mode, device, x, y, w) {
   const s = state.status;
   if (!s.on) return;
-  const light = device.barLight ?? device.type !== 'phone';
+  const light = barLight(device);
   const color = light ? '#ffffff' : '#111111';
   const [hh, mm] = s.time.split(':').map(Number);
   const minutes = String(mm || 0).padStart(2, '0');
@@ -465,11 +490,11 @@ function drawStatusBar(c, mode, device, x, y, w) {
   c.strokeStyle = color;
   c.textBaseline = 'middle';
   if (mode === 'phone') {
-    const cy = y + 23;
+    const cy = y + 17;
     c.font = "700 13px 'DM Sans', sans-serif";
     c.textAlign = 'left';
     c.fillText(`${hh || 0}:${minutes}`, x + 22, cy + .5);
-    for (let i = 0; i < Math.min(s.notifs, 2); i++) drawNotifIcon(c, i % 3, x + 59 + i * 13, cy, 9);
+    for (let i = 0; i < Math.min(s.notifs, 2); i++) drawNotifIcon(c, i % 2 * 2, x + 59 + i * 13, cy, 9);
     let right = x + w - 17;
     drawBattery(c, right - 21, cy, 21, 10.5, s.battery, color);
     right -= 25;
@@ -479,8 +504,10 @@ function drawStatusBar(c, mode, device, x, y, w) {
   } else {
     const u = mode === 'monitor' ? 1.15 : 1;
     const h = 24 * u;
-    c.fillStyle = light ? 'rgba(0,0,0,.32)' : 'rgba(255,255,255,.6)';
-    c.fillRect(x, y, w, h);
+    if (!device.image) {
+      c.fillStyle = light ? 'rgba(0,0,0,.32)' : 'rgba(255,255,255,.6)';
+      c.fillRect(x, y, w, h);
+    }
     c.fillStyle = color;
     const cy = y + h / 2 + .5;
     c.font = `500 ${11.5 * u}px 'DM Sans', sans-serif`;
@@ -505,27 +532,28 @@ function drawStatusBar(c, mode, device, x, y, w) {
     right -= 15 * u + 8 * u;
     for (let i = 0; i < Math.min(s.notifs, 4); i++) {
       right -= 11 * u;
-      drawNotifIcon(c, i % 3, right, cy, 10 * u);
+      drawNotifIcon(c, i % 2 * 2, right, cy, 10 * u);
       right -= 7 * u;
     }
   }
   c.restore();
 }
 
-// True when the top strip of a screenshot is dark, so the bar should be drawn in white.
-function isDarkTop(image) {
+// Average color of the top edge of a screenshot, used to blend the bar band with it.
+function sampleTop(image) {
   try {
     const probe = document.createElement('canvas');
     probe.width = 16;
     probe.height = 2;
     const pc = probe.getContext('2d', { willReadFrequently: true });
-    pc.drawImage(image, 0, 0, image.naturalWidth, Math.max(1, image.naturalHeight * .06), 0, 0, 16, 2);
+    pc.drawImage(image, 0, 0, image.naturalWidth, Math.max(1, image.naturalHeight * .02), 0, 0, 16, 2);
     const { data } = pc.getImageData(0, 0, 16, 2);
-    let sum = 0;
-    for (let i = 0; i < data.length; i += 4) sum += .299 * data[i] + .587 * data[i + 1] + .114 * data[i + 2];
-    return sum / (data.length / 4) < 140;
+    const total = [0, 0, 0];
+    for (let i = 0; i < data.length; i += 4) for (let j = 0; j < 3; j++) total[j] += data[i + j];
+    const [r, g, b] = total.map((v) => Math.round(v / (data.length / 4)));
+    return { barColor: `rgb(${r}, ${g}, ${b})`, barLight: .299 * r + .587 * g + .114 * b < 140 };
   } catch {
-    return null;
+    return { barColor: null, barLight: null };
   }
 }
 
@@ -743,6 +771,9 @@ function syncControls() {
   $('#statusToggle').checked = st.on;
   $('#statusFields').classList.toggle('off', !st.on);
   $('#statusTime').value = st.time;
+  $('#statusBgAuto').checked = st.autoBg;
+  $('#statusBg').value = st.bg;
+  $('#statusBg').disabled = st.autoBg;
   $('#batteryRange').value = st.battery;
   $('#notifRange').value = st.notifs;
   $('#batteryValue').textContent = `${st.battery}%`;
@@ -752,8 +783,8 @@ function syncControls() {
   $('#positionXValue').textContent = `${x}%`;
   $('#positionYValue').textContent = `${y}%`;
   $('#fileName').textContent = device.fileName || 'PNG, JPG, WebP or GIF · max 20 MB';
-  const ideal = IDEAL[device.type === 'phone' && device.landscape ? 'phoneLandscape' : device.type];
-  $('#sizeHint').innerHTML = `<strong>Ideal size for this ${LABELS[device.type].toLowerCase()}</strong><span>${ideal.size}</span><small>In Chrome DevTools (Ctrl+Shift+M, Responsive), set <b>${ideal.chrome}</b>, then ⋮ → Capture screenshot. Other sizes are centered and cropped.</small>`;
+  const ideal = idealFor(device);
+  $('#sizeHint').innerHTML = `<strong>Ideal size for this ${LABELS[device.type].toLowerCase()}</strong><span>${ideal.size}</span><small>In Chrome DevTools (Ctrl+Shift+M, Responsive), set <b>${ideal.chrome}</b>, then ⋮ → Capture screenshot.${bandHeight(device) ? ' Capture the page only: the status bar gets its own background above it.' : ''} Other sizes are centered and cropped.</small>`;
   const off = device.image && Math.abs(device.image.naturalWidth / device.image.naturalHeight / ideal.ratio - 1) > .03;
   $('#sizeHint').classList.toggle('warn', Boolean(off));
   $('#imageDimensions').textContent = device.image ? `${device.image.naturalWidth} × ${device.image.naturalHeight} px${off ? ' · will be cropped' : ' · perfect fit'}` : '';
@@ -786,7 +817,7 @@ async function loadFile(file, device = selectedDevice()) {
   if (file.size > MAX_FILE_SIZE) return showToast('That image is larger than 20 MB.');
   try {
     device.image = await loadImage(file);
-    device.barLight = isDarkTop(device.image);
+    Object.assign(device, sampleTop(device.image));
   } catch {
     return showToast('That image could not be read.');
   }
@@ -803,6 +834,8 @@ dropzone.addEventListener('drop', (event) => loadFile(event.dataTransfer.files[0
 $('#addPhoneButton').addEventListener('click', () => addDevice('phone'));
 $('#addDesktopButton').addEventListener('click', () => addDevice('desktop'));
 $('#statusToggle').addEventListener('change', (event) => { state.status.on = event.target.checked; redraw(); });
+$('#statusBgAuto').addEventListener('change', (event) => { state.status.autoBg = event.target.checked; redraw(); });
+$('#statusBg').addEventListener('input', (event) => { state.status.bg = event.target.value; redraw(); });
 $('#statusTime').addEventListener('input', (event) => { if (event.target.value) { state.status.time = event.target.value; redraw(); } });
 $('#batteryRange').addEventListener('input', (event) => { state.status.battery = Number(event.target.value); redraw(); });
 $('#notifRange').addEventListener('input', (event) => { state.status.notifs = Number(event.target.value); redraw(); });

@@ -138,7 +138,11 @@
                 <span>Notifications <output id="notifValue">2</output></span>
                 <input id="notifRange" type="range" min="0" max="4" value="2" />
               </label>
-              <p class="field-note">Signal, wifi and battery icons. Phones get an iOS-style bar, laptops and big screens a macOS-style menu bar.</p>
+              <div class="bg-row">
+                <label class="check"><input type="checkbox" id="statusBgAuto" checked /> Match screenshot color</label>
+                <input type="color" id="statusBg" value="#111111" aria-label="Status bar background" />
+              </div>
+              <p class="field-note">The screenshot sits below the bar, which keeps its own background. Phones get an iOS-style bar, laptops and big screens a macOS-style menu bar.</p>
             </div>
           </section>
 
